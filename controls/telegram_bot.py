@@ -59,7 +59,8 @@ class TelegramBot:
 
     def _handle(self, update: dict):
         msg = update.get("message", {})
-        text = msg.get("text", "").strip().lower()
+        raw_text = msg.get("text", "").strip()
+        text = raw_text.lower()
         chat_id = str(msg.get("chat", {}).get("id", ""))
 
         # Only respond to configured chat
@@ -115,7 +116,7 @@ class TelegramBot:
                 "/kill — emergency stop all"
             )
         else:
-            reply = f"Unknown command: {text}\nType /help for commands."
+            reply = self._chat(raw_text)
 
         self.send(reply)
 
@@ -146,5 +147,25 @@ Answer the user concisely in 2-3 sentences. You can explain your decisions, curr
             return r.content[0].text.strip()
         except Exception as e:
             return f"Sorry, I couldn't process that: {e}"
+
+
+    def _chat(self, text: str) -> str:
+        try:
+            import anthropic
+            client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
+            d = state.to_dict()
+            context = f"""You are Toby, an autonomous 0DTE options scalping bot talking to your owner via Telegram.
+Status: Running={d["running"]}, Paused={d["paused"]}, P&L=${d["daily_pnl"]:.2f}, Open trades={len(d["open_trades"])}, Regime={d["market_regime"]}
+Last analysis: {d["last_ai_analysis"]}
+Be conversational and concise, 2-3 sentences max."""
+            r = client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=300,
+                system=context,
+                messages=[{"role": "user", "content": text}]
+            )
+            return r.content[0].text.strip()
+        except Exception as e:
+            return f"Sorry, could not process that right now."
 
 telegram = TelegramBot()
