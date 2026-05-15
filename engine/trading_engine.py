@@ -51,10 +51,9 @@ class TradingEngine:
             return
 
         # 3. 10% daily goal check
-        from datetime import datetime
-        import pytz
-        ET = pytz.timezone("America/New_York")
-        now_et = datetime.now(ET)
+        import pytz as _pytz
+        _ET = _pytz.timezone("America/New_York")
+        now_et = datetime.now(_ET)
         DAILY_GOAL = 10000  # 10% of $100k
 
         if state.daily_pnl >= DAILY_GOAL and not state.goal_hit:
@@ -114,10 +113,9 @@ class TradingEngine:
             if not contract_info:
                 return
 
-            from datetime import datetime
-            import pytz
-            ET = pytz.timezone("America/New_York")
-            now_et = datetime.now(ET)
+            import pytz as _pytz2
+            _ET2 = _pytz2.timezone("America/New_York")
+            now_et = datetime.now(_ET2)
             is_power_hour = (now_et.hour == 9 and now_et.minute >= 30)
             buying_power = order_manager.get_buying_power()
             qty = options_scanner.calc_qty(contract_info["mid_price"], buying_power, len(state.open_trades), is_power_hour)
