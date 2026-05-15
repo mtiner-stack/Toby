@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Toby Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #e6edf3; font-family: 'Courier New', monospace; }
+  header { background: #161b22; border-bottom: 1px solid #30363d; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  header h1 { font-size: 1.4rem; color: #58a6ff; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #3fb950; animation: pulse 1.5s infinite; }
+  .dot.paused { background: #f85149; animation: none; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; padding: 24px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; }
+  .card h3 { font-size: 0.75rem; color: #8b949e; text-transform: uppercase; margin-bottom: 8px; }
+  .card .val { font-size: 1.8rem; font-weight: bold; }
+  .green { color: #3fb950; }
+  .red { color: #f85149; }
+  .yellow { color: #d29922; }
+  .section { padding: 0 24px 24px; }
+  .section h2 { font-size: 1rem; color: #8b949e; margin-bottom: 12px; border-bottom: 1px solid #30363d; padding-bottom: 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; padding: 8px; color: #8b949e; font-size: 0.75rem; border-bottom: 1px solid #21262d; }
+  td { padding: 8px; font-size: 0.85rem; border-bottom: 1px solid #21262d; }
+  .btn { background: #238636; border: none; color: white; padding: 8px 16px; border-radius: 6px; cursor: pointer; margin-right: 8px; font-size: 0.85rem; }
+  .btn.danger { background: #da3633; }
+  .btn.warn { background: #9e6a03; }
+  .controls { padding: 0 24px 24px; display: flex; gap: 8px; }
+  .ai-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px; margin: 0 24px 24px; font-size: 0.85rem; color: #8b949e; }
+  .ai-box span { color: #58a6ff; }
+</style>
+</head>
+<body>
+<header>
+  <div class="dot" id="statusDot"></div>
+  <h1>🤖 Toby — Scalping Bot</h1>
+  <span id="timeEl" style="margin-left:auto;color:#8b949e;font-size:0.85rem;"></span>
+</header>
+
+<div class="grid">
+  <div class="card">
+    <h3>Daily P&L</h3>
+    <div class="val" id="dailyPnl">$0.00</div>
+  </div>
+  <div class="card">
+    <h3>Open Trades</h3>
+    <div class="val" id="openTrades">0</div>
+  </div>
+  <div class="card">
+    <h3>Trades Today</h3>
+    <div class="val" id="dailyTrades">0</div>
+  </div>
+  <div class="card">
+    <h3>Market Regime</h3>
+    <div class="val" id="regime" style="font-size:1.1rem;margin-top:4px;">—</div>
+  </div>
+  <div class="card">
+    <h3>Status</h3>
+    <div class="val" id="botStatus" style="font-size:1.1rem;margin-top:4px;">—</div>
+  </div>
+</div>
+
+<div class="ai-box">
+  <span>🧠 AI:</span> <span id="aiText">Waiting for analysis...</span>
+</div>
+
+<div class="controls">
+  <button class="btn warn" onclick="sendCmd('pause')">⏸ Pause</button>
+  <button class="btn" onclick="sendCmd('resume')">▶️ Resume</button>
+  <button class="btn danger" onclick="if(confirm('Activate kill switch?')) sendCmd('kill')">🔴 Kill Switch</button>
+</div>
+
+<div class="section">
+  <h2>Open Positions</h2>
+  <table>
+    <thead><tr><th>Symbol</th><th>Contract</th><th>Side</th><th>Qty</th><th>Entry</th><th>Current</th><th>Stop</th><th>TP</th><th>P&L</th></tr></thead>
+    <tbody id="posTable"><tr><td colspan="9" style="color:#8b949e;">No open positions</td></tr></tbody>
+  </table>
+</div>
+
+<div class="section">
+  <h2>Recent Closed</h2>
+  <table>
+    <thead><tr><th>Symbol</th><th>Contract</th><th>P&L</th><th>Reason</th></tr></thead>
+    <tbody id="closedTable"><tr><td colspan="4" style="color:#8b949e;">No closed trades</td></tr></tbody>
+  </table>
+</div>
+
+<script>
+  function refresh() {
+    fetch('/api/state').then(r => r.json()).then(d => {
+      const pnl = d.daily_pnl;
+      const pnlEl = document.getElementById('dailyPnl');
+      pnlEl.textContent = `$${pnl.toFixed(2)}`;
+      pnlEl.className = 'val ' + (pnl >= 0 ? 'green' : 'red');
+
+      document.getElementById('openTrades').textContent = d.open_trades.length;
+      document.getElementById('dailyTrades').textContent = d.daily_trades;
+      document.getElementById('regime').textContent = d.market_regime;
+      document.getElementById('aiText').textContent = d.last_ai_analysis || 'No analysis yet';
+
+      const dot = document.getElementById('statusDot');
+      let statusText = 'Running';
+      dot.className = 'dot';
+      if (d.kill_switch) { statusText = '🔴 KILLED'; dot.className = 'dot paused'; }
+      else if (d.paused) { statusText = '⏸ Paused'; dot.className = 'dot paused'; }
+      else if (!d.running) { statusText = 'Offline'; dot.className = 'dot paused'; }
+      document.getElementById('botStatus').textContent = statusText;
+
+      const posBody = document.getElementById('posTable');
+      if (d.open_trades.length === 0) {
+        posBody.innerHTML = '<tr><td colspan="9" style="color:#8b949e;">No open positions</td></tr>';
+      } else {
+        posBody.innerHTML = d.open_trades.map(t => {
+          const cls = t.pnl >= 0 ? 'green' : 'red';
+          return `<tr><td>${t.symbol}</td><td>${t.contract}</td><td>${t.side}</td><td>${t.qty}</td>
+            <td>$${t.entry.toFixed(2)}</td><td>$${(t.current||0).toFixed(2)}</td>
+            <td>$${t.stop.toFixed(2)}</td><td>$${t.tp.toFixed(2)}</td>
+            <td class="${cls}">$${t.pnl.toFixed(2)}</td></tr>`;
+        }).join('');
+      }
+
+      const closedBody = document.getElementById('closedTable');
+      if (d.recent_closed.length === 0) {
+        closedBody.innerHTML = '<tr><td colspan="4" style="color:#8b949e;">No closed trades</td></tr>';
+      } else {
+        closedBody.innerHTML = [...d.recent_closed].reverse().map(t => {
+          const cls = t.pnl >= 0 ? 'green' : 'red';
+          return `<tr><td>${t.symbol}</td><td>${t.contract}</td><td class="${cls}">$${t.pnl.toFixed(2)}</td><td>${t.reason}</td></tr>`;
+        }).join('');
+      }
+    }).catch(() => {});
+
+    document.getElementById('timeEl').textContent = new Date().toLocaleTimeString();
+  }
+
+  function sendCmd(cmd) {
+    fetch(`/api/control/${cmd}`, {method: 'POST'}).then(() => refresh());
+  }
+
+  refresh();
+  setInterval(refresh, 5000);
+</script>
+</body>
+</html>

@@ -1,0 +1,149 @@
+2026-05-14 20:57:55,338 [INFO] main: ==================================================
+2026-05-14 20:57:55,338 [INFO] main:   TOBY — Options Scalping Bot  
+2026-05-14 20:57:55,338 [INFO] main: ==================================================
+2026-05-14 20:57:55,338 [INFO] telegram: Telegram polling started.
+2026-05-14 20:57:55,338 [INFO] main: Dashboard running at http://localhost:5000
+2026-05-14 20:57:55,338 [INFO] engine: 🚀 Toby is live.
+2026-05-14 20:57:55,799 [INFO] engine: --- Tick 20:57 | P&L: $0.00 | Open: 0 ---
+2026-05-14 20:57:55,938 [INFO] engine: Market gate: Too close to market close
+2026-05-14 20:58:25,942 [INFO] engine: --- Tick 20:58 | P&L: $0.00 | Open: 0 ---
+2026-05-14 20:58:26,075 [INFO] engine: Market gate: Too close to market close
+2026-05-14 20:58:56,078 [INFO] engine: --- Tick 20:58 | P&L: $0.00 | Open: 0 ---
+2026-05-14 20:58:56,230 [INFO] engine: Market gate: Too close to market close
+2026-05-14 20:59:26,240 [INFO] engine: --- Tick 20:59 | P&L: $0.00 | Open: 0 ---
+2026-05-14 20:59:26,371 [INFO] engine: Market gate: Too close to market close
+2026-05-14 20:59:56,377 [INFO] engine: --- Tick 20:59 | P&L: $0.00 | Open: 0 ---
+2026-05-14 20:59:56,532 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:00:05,188 [INFO] engine: Shutdown requested.
+2026-05-14 21:00:05,188 [INFO] engine: Shutting down. Closing all positions.
+2026-05-14 21:00:05,189 [WARNING] orders: CLOSING ALL POSITIONS
+2026-05-14 21:00:41,786 [INFO] main: ==================================================
+2026-05-14 21:00:41,787 [INFO] main:   TOBY — Options Scalping Bot  
+2026-05-14 21:00:41,787 [INFO] main: ==================================================
+2026-05-14 21:00:41,787 [INFO] telegram: Telegram polling started.
+2026-05-14 21:00:41,787 [INFO] main: Dashboard running at http://localhost:5000
+2026-05-14 21:00:41,787 [INFO] engine: 🚀 Toby is live.
+2026-05-14 21:00:42,273 [INFO] engine: --- Tick 21:00 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:00:42,420 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:01:12,425 [INFO] engine: --- Tick 21:01 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:01:12,590 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:01:42,596 [INFO] engine: --- Tick 21:01 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:01:42,735 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:02:12,740 [INFO] engine: --- Tick 21:02 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:02:12,878 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:02:42,884 [INFO] engine: --- Tick 21:02 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:02:43,022 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:03:13,024 [INFO] engine: --- Tick 21:03 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:03:13,189 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:03:43,195 [INFO] engine: --- Tick 21:03 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:03:43,359 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:04:13,365 [INFO] engine: --- Tick 21:04 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:04:13,518 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:04:43,524 [INFO] engine: --- Tick 21:04 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:04:43,674 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:04:56,530 [INFO] engine: Shutdown requested.
+2026-05-14 21:04:56,531 [INFO] engine: Shutting down. Closing all positions.
+2026-05-14 21:04:56,531 [WARNING] orders: CLOSING ALL POSITIONS
+2026-05-14 21:05:08,023 [INFO] main: ==================================================
+2026-05-14 21:05:08,023 [INFO] main:   TOBY — Options Scalping Bot  
+2026-05-14 21:05:08,023 [INFO] main: ==================================================
+2026-05-14 21:05:08,024 [INFO] telegram: Telegram polling started.
+2026-05-14 21:05:08,024 [INFO] main: Dashboard running at http://localhost:5000
+2026-05-14 21:05:08,024 [INFO] engine: 🚀 Toby is live.
+2026-05-14 21:05:08,491 [INFO] engine: --- Tick 21:05 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:05:08,635 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:05:38,641 [INFO] engine: --- Tick 21:05 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:05:38,816 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:06:08,819 [INFO] engine: --- Tick 21:06 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:06:08,996 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:06:39,002 [INFO] engine: --- Tick 21:06 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:06:39,168 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:07:09,172 [INFO] engine: --- Tick 21:07 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:07:09,320 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:07:39,325 [INFO] engine: --- Tick 21:07 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:07:39,495 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:08:09,501 [INFO] engine: --- Tick 21:08 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:08:09,651 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:08:39,653 [INFO] engine: --- Tick 21:08 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:08:39,812 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:09:09,815 [INFO] engine: --- Tick 21:09 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:09:09,957 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:09:39,961 [INFO] engine: --- Tick 21:09 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:09:40,108 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:10:10,114 [INFO] engine: --- Tick 21:10 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:10:10,257 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:10:40,261 [INFO] engine: --- Tick 21:10 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:10:40,402 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:11:10,407 [INFO] engine: --- Tick 21:11 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:11:10,536 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:11:40,542 [INFO] engine: --- Tick 21:11 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:11:40,693 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:12:10,699 [INFO] engine: --- Tick 21:12 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:12:10,852 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:12:18,132 [INFO] main: ==================================================
+2026-05-14 21:12:18,133 [INFO] main:   TOBY — Options Scalping Bot  
+2026-05-14 21:12:18,133 [INFO] main: ==================================================
+2026-05-14 21:12:18,133 [INFO] telegram: Telegram polling started.
+2026-05-14 21:12:18,133 [INFO] main: Dashboard running at http://localhost:5000
+2026-05-14 21:12:18,133 [INFO] engine: 🚀 Toby is live.
+2026-05-14 21:12:18,582 [INFO] engine: --- Tick 21:12 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:12:18,719 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:12:40,858 [INFO] engine: --- Tick 21:12 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:12:40,994 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:12:48,722 [INFO] engine: --- Tick 21:12 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:12:48,865 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:13:10,997 [INFO] engine: --- Tick 21:13 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:13:11,138 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:13:18,868 [INFO] engine: --- Tick 21:13 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:13:18,998 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:13:41,098 [INFO] engine: Shutdown requested.
+2026-05-14 21:13:41,099 [INFO] engine: Shutting down. Closing all positions.
+2026-05-14 21:13:41,099 [WARNING] orders: CLOSING ALL POSITIONS
+2026-05-14 21:13:49,001 [INFO] engine: --- Tick 21:13 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:13:49,152 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:14:19,158 [INFO] engine: --- Tick 21:14 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:14:19,305 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:14:49,311 [INFO] engine: --- Tick 21:14 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:14:49,452 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:15:19,458 [INFO] engine: --- Tick 21:15 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:15:19,625 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:15:49,630 [INFO] engine: --- Tick 21:15 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:15:49,781 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:16:19,784 [INFO] engine: --- Tick 21:16 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:16:19,953 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:16:49,959 [INFO] engine: --- Tick 21:16 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:16:50,115 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:17:09,222 [INFO] main: ==================================================
+2026-05-14 21:17:09,223 [INFO] main:   TOBY — Options Scalping Bot  
+2026-05-14 21:17:09,223 [INFO] main: ==================================================
+2026-05-14 21:17:09,223 [INFO] telegram: Telegram polling started.
+2026-05-14 21:17:09,223 [INFO] main: Dashboard running at http://localhost:5000
+2026-05-14 21:17:09,223 [INFO] engine: 🚀 Toby is live.
+2026-05-14 21:17:09,672 [INFO] telegram: Telegram command: hello
+2026-05-14 21:17:09,803 [INFO] engine: --- Tick 21:17 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:17:09,925 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:17:20,120 [INFO] engine: --- Tick 21:17 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:17:20,290 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:17:39,931 [INFO] engine: --- Tick 21:17 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:17:40,096 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:17:50,294 [INFO] engine: --- Tick 21:17 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:17:50,431 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:18:10,100 [INFO] engine: --- Tick 21:18 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:18:10,271 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:18:20,437 [INFO] engine: --- Tick 21:18 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:18:20,591 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:18:40,275 [INFO] engine: --- Tick 21:18 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:18:40,426 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:18:50,600 [INFO] engine: --- Tick 21:18 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:18:50,774 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:19:10,439 [INFO] engine: --- Tick 21:19 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:19:10,589 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:19:20,781 [INFO] engine: --- Tick 21:19 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:19:20,970 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:19:40,602 [INFO] engine: --- Tick 21:19 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:19:40,741 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:19:50,976 [INFO] engine: --- Tick 21:19 | P&L: $0.00 | Open: 0 ---
+2026-05-14 21:19:51,121 [INFO] engine: Market gate: Too close to market close
+2026-05-14 21:19:53,880 [INFO] engine: Shutdown requested.
+2026-05-14 21:19:53,880 [INFO] engine: Shutting down. Closing all positions.
+2026-05-14 21:19:53,880 [WARNING] orders: CLOSING ALL POSITIONS
