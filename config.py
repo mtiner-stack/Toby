@@ -19,7 +19,7 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID")
 
 # Trading params
-SYMBOLS = ["SPY", "QQQ", "AAPL", "TSLA", "NVDA"]
+SYMBOLS = ["SPY", "QQQ"]
 MAX_DAILY_LOSS = float(os.getenv("MAX_DAILY_LOSS", 500))
 MAX_POSITION_SIZE = float(os.getenv("MAX_POSITION_SIZE", 1000))
 MAX_OPEN_TRADES = int(os.getenv("MAX_OPEN_TRADES", 3))
