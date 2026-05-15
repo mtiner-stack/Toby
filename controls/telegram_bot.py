@@ -168,4 +168,48 @@ Be conversational and concise, 2-3 sentences max."""
         except Exception as e:
             return f"Sorry, could not process that right now."
 
+
+    def _chat(self, text: str) -> str:
+        try:
+            import anthropic
+            from datetime import datetime
+            import pytz
+            ET = pytz.timezone("America/New_York")
+            now_et = datetime.now(ET)
+            time_str = now_et.strftime("%A %B %d %Y, %I:%M %p ET")
+            market_open = now_et.replace(hour=9, minute=30, second=0, microsecond=0)
+            market_close = now_et.replace(hour=16, minute=0, second=0, microsecond=0)
+            is_weekend = now_et.weekday() >= 5
+            if is_weekend:
+                market_status = "Market is closed (weekend)"
+            elif now_et < market_open:
+                mins = int((market_open - now_et).total_seconds() / 60)
+                market_status = f"Market opens in {mins} minutes"
+            elif now_et > market_close:
+                market_status = "Market is closed for today"
+            else:
+                market_status = "Market is OPEN"
+
+            client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
+            d = state.to_dict()
+            context = f"""You are Toby, an autonomous 0DTE options scalping bot talking to your owner via Telegram.
+Current time: {time_str}
+Market status: {market_status}
+Bot status: Running={d["running"]}, Paused={d["paused"]}, Kill switch={d["kill_switch"]}
+Daily P&L: ${d["daily_pnl"]:.2f} | Open trades: {len(d["open_trades"])} | Total trades today: {d["daily_trades"]}
+Market regime: {d["market_regime"]}
+Last analysis: {d["last_ai_analysis"]}
+Recent closed trades: {d["recent_closed"]}
+Be conversational and concise, 2-3 sentences max. Always use the actual current time above."""
+            r = client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=300,
+                system=context,
+                messages=[{"role": "user", "content": text}]
+            )
+            return r.content[0].text.strip()
+        except Exception as e:
+            log.error(f"Chat error: {e}")
+            return "Sorry, could not process that right now."
+
 telegram = TelegramBot()
