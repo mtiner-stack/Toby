@@ -52,7 +52,7 @@ class TradingEngine:
 
         # 3. Scan for new trades
         vix = market_data.get_vix()
-        market_ok, reason = risk_engine.check_market_conditions(vix, time_str)
+        market_ok, reason = risk_engine.check_market_conditions(vix)
         if not market_ok:
             log.info(f"Market gate: {reason}")
             return
