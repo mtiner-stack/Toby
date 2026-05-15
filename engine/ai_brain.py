@@ -58,7 +58,7 @@ Respond with JSON only."""
                 system=SYSTEM_PROMPT,
                 messages=[{"role": "user", "content": prompt}]
             )
-            raw = response.content[0].text.strip()
+            raw = response.content[0].text.strip().replace(chr(96)*3+"json", "").replace(chr(96)*3, "").strip()
             signal = json.loads(raw)
             log.info(f"AI signal for {market_snapshot.get('symbol')}: {signal['action']} | confidence={signal['confidence']:.0%}")
             return signal
