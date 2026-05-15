@@ -50,6 +50,28 @@ class TradingEngine:
             state.paused = True
             return
 
+        # 3. 10% daily goal check
+        from datetime import datetime
+        import pytz
+        ET = pytz.timezone("America/New_York")
+        now_et = datetime.now(ET)
+        DAILY_GOAL = 10000  # 10% of $100k
+
+        if state.daily_pnl >= DAILY_GOAL and not state.goal_hit:
+            state.goal_hit = True
+            log.info(f"🎯 Daily goal hit! ${state.daily_pnl:.2f}. Trailing winners, no new trades.")
+            telegram.send(f"🎯 *Daily goal hit!* P&L: ${state.daily_pnl:.2f}\nTrailing all winners. No new positions.")
+
+        if getattr(state, "goal_hit", False):
+            log.info("Goal hit — managing existing positions only.")
+            return
+
+        # 4. After 10am — switch to conservative mode if goal not hit
+        if now_et.hour >= 10 and not getattr(state, "conservative_mode", False):
+            state.conservative_mode = True
+            log.info("10am passed, goal not hit. Switching to conservative mode.")
+            telegram.send(f"⚠️ 10am — goal not hit (${state.daily_pnl:.2f}). Switching to conservative mode.")
+
         # 3. Scan for new trades
         vix = market_data.get_vix()
         market_ok, reason = risk_engine.check_market_conditions(vix)
@@ -74,6 +96,8 @@ class TradingEngine:
                 **tech,
                 "vix": vix,
                 "open_positions": len(state.open_trades),
+                "conservative_mode": getattr(state, "conservative_mode", False),
+                "goal_hit": getattr(state, "goal_hit", False),
                 "daily_pnl": state.daily_pnl,
             }
 
@@ -90,7 +114,13 @@ class TradingEngine:
             if not contract_info:
                 return
 
-            qty = options_scanner.calc_qty(contract_info["mid_price"])
+            from datetime import datetime
+            import pytz
+            ET = pytz.timezone("America/New_York")
+            now_et = datetime.now(ET)
+            is_power_hour = (now_et.hour == 9 and now_et.minute >= 30)
+            buying_power = order_manager.get_buying_power()
+            qty = options_scanner.calc_qty(contract_info["mid_price"], buying_power, len(state.open_trades), is_power_hour)
             cost = contract_info["mid_price"] * 100 * qty
 
             # Risk gate

@@ -102,12 +102,27 @@ class OptionsScanner:
             log.error(f"Quote error for {ticker}: {e}")
         return {}
 
-    def calc_qty(self, mid_price: float) -> int:
-        """How many contracts can we buy within MAX_POSITION_SIZE."""
-        if mid_price <= 0:
+    def calc_qty(self, mid_price: float, buying_power: float, open_trades: int, is_power_hour: bool) -> int:
+        """
+        Dynamically size position based on available buying power.
+        Power hour: deploy 25-35% of buying power split across up to 3 trades.
+        After 10am: deploy 10-15% max per trade.
+        """
+        if mid_price <= 0 or buying_power <= 0:
             return 0
+
         cost_per = mid_price * 100
-        qty = int(config.MAX_POSITION_SIZE / cost_per)
-        return max(1, min(qty, 10))  # 1-10 contracts
+        max_concurrent = 3
+
+        if is_power_hour:
+            # Use 30% of buying power total, split across max 3 trades
+            total_allocation = buying_power * 0.30
+            per_trade = total_allocation / max(1, max_concurrent - open_trades)
+        else:
+            # Conservative: 12% of buying power per trade
+            per_trade = buying_power * 0.12
+
+        qty = int(per_trade / cost_per)
+        return max(1, min(qty, 50))  # 1-50 contracts
 
 options_scanner = OptionsScanner()

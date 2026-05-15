@@ -32,6 +32,8 @@ class BotState:
         self.kill_switch = False
         self.last_ai_analysis = ""
         self.market_regime = "unknown"
+        self.goal_hit = False
+        self.conservative_mode = False
 
     def add_trade(self, trade):
         with self._lock:
