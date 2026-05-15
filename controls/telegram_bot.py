@@ -119,4 +119,32 @@ class TelegramBot:
 
         self.send(reply)
 
+
+    def _chat(self, text: str) -> str:
+        try:
+            import anthropic
+            import config
+            from utils.state import state
+            client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
+            d = state.to_dict()
+            context = f"""You are Toby, an autonomous 0DTE options scalping bot. 
+Current status: Running={d["running"]}, Paused={d["paused"]}, Kill switch={d["kill_switch"]}
+Daily P&L: ${d["daily_pnl"]:.2f}
+Open trades: {len(d["open_trades"])}
+Daily trades: {d["daily_trades"]}
+Market regime: {d["market_regime"]}
+Last AI analysis: {d["last_ai_analysis"]}
+Recent closed trades: {d["recent_closed"]}
+
+Answer the user concisely in 2-3 sentences. You can explain your decisions, current market view, or status."""
+            r = client.messages.create(
+                model="claude-sonnet-4-5",
+                max_tokens=200,
+                system=context,
+                messages=[{"role": "user", "content": text}]
+            )
+            return r.content[0].text.strip()
+        except Exception as e:
+            return f"Sorry, I couldn't process that: {e}"
+
 telegram = TelegramBot()
