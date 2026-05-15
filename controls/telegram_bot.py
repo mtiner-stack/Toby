@@ -174,6 +174,7 @@ Be conversational and concise, 2-3 sentences max."""
             import anthropic
             from datetime import datetime
             import pytz
+            from data.market_data import market_data
             ET = pytz.timezone("America/New_York")
             now_et = datetime.now(ET)
             time_str = now_et.strftime("%A %B %d %Y, %I:%M %p ET")
@@ -190,17 +191,27 @@ Be conversational and concise, 2-3 sentences max."""
             else:
                 market_status = "Market is OPEN"
 
+            # Fetch live prices for all tracked symbols
+            import config as cfg
+            live_prices = {}
+            for sym in cfg.SYMBOLS:
+                snap = market_data.get_snapshot(sym)
+                if snap:
+                    live_prices[sym] = f"${snap['price']:.2f} ({snap['day_change_pct']:+.2f}%)"
+            prices_str = " | ".join([f"{k}: {v}" for k, v in live_prices.items()])
+
             client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
             d = state.to_dict()
             context = f"""You are Toby, an autonomous 0DTE options scalping bot talking to your owner via Telegram.
 Current time: {time_str}
 Market status: {market_status}
+LIVE PRICES RIGHT NOW: {prices_str}
 Bot status: Running={d["running"]}, Paused={d["paused"]}, Kill switch={d["kill_switch"]}
 Daily P&L: ${d["daily_pnl"]:.2f} | Open trades: {len(d["open_trades"])} | Total trades today: {d["daily_trades"]}
 Market regime: {d["market_regime"]}
 Last analysis: {d["last_ai_analysis"]}
 Recent closed trades: {d["recent_closed"]}
-Be conversational and concise, 2-3 sentences max. Always use the actual current time above."""
+Always use the LIVE PRICES above when asked about current prices. Never guess or use stale data."""
             r = client.messages.create(
                 model="claude-sonnet-4-5",
                 max_tokens=300,
