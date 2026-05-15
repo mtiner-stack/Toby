@@ -30,7 +30,7 @@ class MarketData:
         try:
             end = datetime.utcnow()
             start = end - timedelta(hours=8)
-            data = self._get(f"/v2/stocks/{symbol}/bars", {"timeframe": timeframe, "start": start.strftime("%Y-%m-%dT%H:%M:%SZ"), "end": end.strftime("%Y-%m-%dT%H:%M:%SZ"), "limit": limit, "feed": "iex"})
+            data = self._get(f"/v2/stocks/{symbol}/bars", {"timeframe": timeframe, "start": start.strftime("%Y-%m-%dT%H:%M:%SZ"), "end": end.strftime("%Y-%m-%dT%H:%M:%SZ"), "limit": limit, "feed": "sip"})
             return data.get("bars", [])
         except Exception as e:
             log.error(f"Bars error for {symbol}: {e}")
