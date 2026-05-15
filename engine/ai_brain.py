@@ -34,7 +34,7 @@ Rules you never break:
 class AIBrain:
     def __init__(self):
         self.client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
-        self.model = "claude-opus-4-5"
+        self.model = "claude-sonnet-4-5"
 
     def analyze(self, market_snapshot: dict) -> dict:
         """
