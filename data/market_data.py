@@ -1,76 +1,47 @@
-"""
-Market Data — Polygon.io REST + WebSocket feeds.
-Provides price snapshots, technical indicators, VIX.
-"""
-import requests
-import numpy as np
+import requests, numpy as np
 from datetime import datetime, timedelta
 from utils.logger import get_logger
 import config
 
 log = get_logger("market_data")
-
-BASE = "https://api.polygon.io"
+ALPACA_DATA_URL = "https://data.alpaca.markets"
 
 class MarketData:
     def __init__(self):
-        self.key = config.POLYGON_API_KEY
+        self.headers = {"APCA-API-KEY-ID": config.ALPACA_API_KEY, "APCA-API-SECRET-KEY": config.ALPACA_SECRET_KEY}
 
-    def _get(self, path: str, params: dict = {}) -> dict:
-        params["apiKey"] = self.key
-        r = requests.get(f"{BASE}{path}", params=params, timeout=10)
+    def _get(self, path, params={}):
+        r = requests.get(f"{ALPACA_DATA_URL}{path}", headers=self.headers, params=params, timeout=10)
         r.raise_for_status()
         return r.json()
 
-    def get_snapshot(self, symbol: str) -> dict:
-        """Full market snapshot for one ticker."""
+    def get_snapshot(self, symbol):
         try:
-            data = self._get(f"/v2/snapshot/locale/us/markets/stocks/tickers/{symbol}")
-            snap = data.get("ticker", {})
-            day = snap.get("day", {})
-            prev = snap.get("prevDay", {})
-            price = snap.get("lastTrade", {}).get("p", 0)
-
-            return {
-                "symbol": symbol,
-                "price": price,
-                "open": day.get("o", 0),
-                "high": day.get("h", 0),
-                "low": day.get("l", 0),
-                "volume": day.get("v", 0),
-                "prev_close": prev.get("c", 0),
-                "day_change_pct": ((price - prev.get("c", price)) / prev.get("c", 1)) * 100,
-                "vwap": day.get("vw", 0),
-            }
+            data = self._get(f"/v2/stocks/{symbol}/snapshot")
+            price = data.get("latestTrade", {}).get("p", 0)
+            daily = data.get("dailyBar", {})
+            prev_close = data.get("prevDailyBar", {}).get("c", price)
+            return {"symbol": symbol, "price": price, "open": daily.get("o",0), "high": daily.get("h",0), "low": daily.get("l",0), "volume": daily.get("v",0), "prev_close": prev_close, "day_change_pct": ((price-prev_close)/prev_close*100) if prev_close else 0, "vwap": daily.get("vw",0)}
         except Exception as e:
             log.error(f"Snapshot error for {symbol}: {e}")
             return {}
 
-    def get_bars(self, symbol: str, minutes: int = 5, limit: int = 50) -> list:
-        """Get recent OHLCV bars."""
+    def get_bars(self, symbol, timeframe="5Min", limit=50):
         try:
-            end = datetime.now()
-            start = end - timedelta(hours=6)
-            data = self._get(
-                f"/v2/aggs/ticker/{symbol}/range/{minutes}/minute/"
-                f"{start.strftime('%Y-%m-%d')}/{end.strftime('%Y-%m-%d')}",
-                {"adjusted": "true", "sort": "asc", "limit": limit}
-            )
-            return data.get("results", [])
+            end = datetime.utcnow()
+            start = end - timedelta(hours=8)
+            data = self._get(f"/v2/stocks/{symbol}/bars", {"timeframe": timeframe, "start": start.strftime("%Y-%m-%dT%H:%M:%SZ"), "end": end.strftime("%Y-%m-%dT%H:%M:%SZ"), "limit": limit, "feed": "iex"})
+            return data.get("bars", [])
         except Exception as e:
             log.error(f"Bars error for {symbol}: {e}")
             return []
 
-    def get_technicals(self, symbol: str) -> dict:
-        """Compute RSI and MACD from recent bars."""
-        bars = self.get_bars(symbol, minutes=5, limit=50)
+    def get_technicals(self, symbol):
+        bars = self.get_bars(symbol, limit=50)
         if len(bars) < 20:
-            return {"rsi": 50, "macd": 0, "macd_signal": 0, "trend": "unknown", "volume_ratio": 1.0}
-
+            return {"rsi": 50, "macd": 0, "macd_signal": 0, "trend": "unknown", "volume_ratio": 1.0, "support": 0, "resistance": 0}
         closes = np.array([b["c"] for b in bars])
         volumes = np.array([b["v"] for b in bars])
-
-        # RSI-14
         deltas = np.diff(closes)
         gains = np.where(deltas > 0, deltas, 0)
         losses = np.where(deltas < 0, -deltas, 0)
@@ -78,31 +49,16 @@ class MarketData:
         avg_loss = np.mean(losses[-14:])
         rs = avg_gain / avg_loss if avg_loss != 0 else 100
         rsi = 100 - (100 / (1 + rs))
-
-        # MACD (12/26/9)
         ema12 = self._ema(closes, 12)
         ema26 = self._ema(closes, 26)
         macd_line = ema12[-1] - ema26[-1]
         signal_line = self._ema(ema12 - ema26, 9)[-1]
-
-        # Volume ratio vs 20-bar avg
         vol_ratio = volumes[-1] / np.mean(volumes[-20:]) if len(volumes) >= 20 else 1.0
-
-        # Simple trend: price above/below 20-bar EMA
         ema20 = self._ema(closes, 20)[-1]
         trend = "up" if closes[-1] > ema20 else "down"
+        return {"rsi": round(rsi,1), "macd": round(macd_line,4), "macd_signal": round(signal_line,4), "trend": trend, "volume_ratio": round(vol_ratio,2), "support": round(float(np.min(closes[-20:])),2), "resistance": round(float(np.max(closes[-20:])),2)}
 
-        return {
-            "rsi": round(rsi, 1),
-            "macd": round(macd_line, 4),
-            "macd_signal": round(signal_line, 4),
-            "trend": trend,
-            "volume_ratio": round(vol_ratio, 2),
-            "support": round(min(closes[-20:]), 2),
-            "resistance": round(max(closes[-20:]), 2),
-        }
-
-    def _ema(self, data: np.ndarray, period: int) -> np.ndarray:
+    def _ema(self, data, period):
         k = 2 / (period + 1)
         ema = np.zeros(len(data))
         ema[0] = data[0]
@@ -110,12 +66,10 @@ class MarketData:
             ema[i] = data[i] * k + ema[i-1] * (1 - k)
         return ema
 
-    def get_vix(self) -> float:
-        """Fetch VIX level."""
+    def get_vix(self):
         try:
-            snap = self._get("/v2/snapshot/locale/us/markets/stocks/tickers/VIXY")
-            return snap.get("ticker", {}).get("lastTrade", {}).get("p", 20.0)
+            return self._get("/v2/stocks/VIXY/snapshot").get("latestTrade", {}).get("p", 20.0)
         except:
-            return 20.0  # Default to moderate if unavailable
+            return 20.0
 
 market_data = MarketData()
