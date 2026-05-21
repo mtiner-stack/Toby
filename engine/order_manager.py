@@ -27,8 +27,9 @@ class OrderManager:
     def buy_option(self, symbol: str, contract: str, qty: int, signal: dict) :
         """Submit a market buy for an options contract."""
         try:
+            alpaca_symbol = contract.replace("O:", "")
             order = self.api.submit_order(
-                symbol=contract,
+                symbol=alpaca_symbol,
                 qty=qty,
                 side="buy",
                 type="market",
@@ -59,8 +60,9 @@ class OrderManager:
     def close_position(self, contract: str, qty: int) -> float:
         """Market sell to close."""
         try:
+            alpaca_symbol = contract.replace("O:", "")
             order = self.api.submit_order(
-                symbol=contract,
+                symbol=alpaca_symbol,
                 qty=qty,
                 side="sell",
                 type="market",
