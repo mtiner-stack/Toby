@@ -107,25 +107,20 @@ class OptionsScanner:
 
     def calc_qty(self, mid_price: float, buying_power: float, open_trades: int, is_power_hour: bool) -> int:
         """
-        Dynamically size position based on available buying power.
-        Power hour: deploy 25-35% of buying power split across up to 3 trades.
-        After 10am: deploy 10-15% max per trade.
+        Size position based on available buying power.
+        Max 10 contracts per position. Requires real price > $0.10.
         """
-        if mid_price <= 0 or buying_power <= 0:
-            return 0
+        if mid_price <= 0.10 or buying_power <= 0:
+            return 1
 
         cost_per = mid_price * 100
-        max_concurrent = 3
 
         if is_power_hour:
-            # Use 30% of buying power total, split across max 3 trades
-            total_allocation = buying_power * 0.30
-            per_trade = total_allocation / max(1, max_concurrent - open_trades)
+            per_trade = buying_power * 0.075  # 7.5% per leg (call + put = 15% per symbol)
         else:
-            # Conservative: 12% of buying power per trade
-            per_trade = buying_power * 0.12
+            per_trade = buying_power * 0.05   # 5% conservative
 
         qty = int(per_trade / cost_per)
-        return max(1, min(qty, 50))  # 1-50 contracts
+        return max(1, min(qty, 10))  # hard cap at 10 contracts
 
 options_scanner = OptionsScanner()

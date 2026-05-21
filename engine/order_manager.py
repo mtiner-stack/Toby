@@ -35,9 +35,19 @@ class OrderManager:
                 type="market",
                 time_in_force="day"
             )
-            # Fetch fill price (may need retry in production)
-            filled_order = self.api.get_order(order.id)
-            entry_price = float(filled_order.filled_avg_price or 0)
+            # Wait for fill with retries
+            import time as _time
+            entry_price = 0
+            for _ in range(10):
+                filled_order = self.api.get_order(order.id)
+                if filled_order.filled_avg_price and float(filled_order.filled_avg_price) > 0:
+                    entry_price = float(filled_order.filled_avg_price)
+                    break
+                _time.sleep(0.5)
+            if entry_price == 0:
+                # Fallback: use mid price from signal if available
+                entry_price = signal.get("mid_price", 1.0)
+                log.warning("Could not get fill price, using fallback: " + str(entry_price))
 
             trade = Trade(
                 symbol=symbol,
