@@ -53,7 +53,7 @@ class OptionsScanner:
                 return None
 
             mid = (quote.get("bid", 0) + quote.get("ask", 0)) / 2
-            if mid <= 0.05:
+            if mid <= 0.10:
                 log.warning(f"Contract {ticker} too cheap (${mid:.2f}), skipping")
                 return None
 
