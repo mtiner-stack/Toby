@@ -94,7 +94,7 @@ class TradingEngine:
                 if call_contract:
                     call_signal["mid_price"] = call_contract["mid_price"]
                 if call_contract:
-                    call_qty = max(1, int(per_contract_budget / (call_contract["mid_price"] * 100)))
+                    call_qty = 1  # Fixed at 1 contract until fill price is reliable
                     call_trade = order_manager.buy_option(symbol, call_contract["ticker"], call_qty, call_signal)
                     if call_trade:
                         telegram.send("CALL entered: " + symbol + " $" + str(call_contract["strike"]) + " x" + str(call_qty) + " @ $" + str(round(call_trade.entry_price, 2)) + "\nStop: -5% = $" + str(round(call_trade.stop_price, 2)))
@@ -103,7 +103,7 @@ class TradingEngine:
                 if put_contract:
                     put_signal["mid_price"] = put_contract["mid_price"]
                 if put_contract:
-                    put_qty = max(1, int(per_contract_budget / (put_contract["mid_price"] * 100)))
+                    put_qty = 1  # Fixed at 1 contract until fill price is reliable
                     put_trade = order_manager.buy_option(symbol, put_contract["ticker"], put_qty, put_signal)
                     if put_trade:
                         telegram.send("PUT entered: " + symbol + " $" + str(put_contract["strike"]) + " x" + str(put_qty) + " @ $" + str(round(put_trade.entry_price, 2)) + "\nStop: -5% = $" + str(round(put_trade.stop_price, 2)))
