@@ -35,8 +35,9 @@ class TrailingStopManager:
             log.info("Hard stop -5% on " + trade.contract + " | current=" + str(round(current_price, 2)) + " entry=" + str(round(entry, 2)))
             return True, "hard_stop_5pct"
 
-        # TRAILING STOPS — only activate after position reaches +1% gain
-        if peak_gain_pct >= 0.01:
+        # TRAILING STOPS — only activate after position has actually gained 1%
+        # peak_gain_pct must be genuinely positive, not just equal to entry
+        if peak_gain_pct >= 0.01 and trade.peak_price > (trade.entry_price * 1.01):
             if peak_gain_pct >= 0.20:
                 trail_stop = trade.peak_price * 0.95
                 tier = "tier3_20pct+"
