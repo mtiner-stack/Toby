@@ -87,26 +87,20 @@ class TradingEngine:
                     log.error("No price data for " + symbol)
                     continue
                 price = snap["price"]
-                buying_power = order_manager.get_buying_power()
-                per_contract_budget = (buying_power * 0.15) / 2
                 call_signal = {"action": "buy_call", "confidence": 1.0, "suggested_strike": "1_OTM", "suggested_expiry": "0DTE", "reasoning": "Mechanical open entry - OTM call"}
                 call_contract = options_scanner.find_contract(symbol, call_signal, price)
                 if call_contract:
                     call_signal["mid_price"] = call_contract["mid_price"]
-                if call_contract:
-                    call_qty = 1  # Fixed at 1 contract until fill price is reliable
-                    call_trade = order_manager.buy_option(symbol, call_contract["ticker"], call_qty, call_signal)
+                    call_trade = order_manager.buy_option(symbol, call_contract["ticker"], 1, call_signal)
                     if call_trade:
-                        telegram.send("CALL entered: " + symbol + " $" + str(call_contract["strike"]) + " x" + str(call_qty) + " @ $" + str(round(call_trade.entry_price, 2)) + "\nStop: -5% = $" + str(round(call_trade.stop_price, 2)))
+                        telegram.send("CALL entered: " + symbol + " $" + str(call_contract["strike"]) + " x1 @ $" + str(round(call_trade.entry_price, 2)) + "\nStop: -5% = $" + str(round(call_trade.stop_price, 2)))
                 put_signal = {"action": "buy_put", "confidence": 1.0, "suggested_strike": "1_OTM", "suggested_expiry": "0DTE", "reasoning": "Mechanical open entry - OTM put"}
                 put_contract = options_scanner.find_contract(symbol, put_signal, price)
                 if put_contract:
                     put_signal["mid_price"] = put_contract["mid_price"]
-                if put_contract:
-                    put_qty = 1  # Fixed at 1 contract until fill price is reliable
-                    put_trade = order_manager.buy_option(symbol, put_contract["ticker"], put_qty, put_signal)
+                    put_trade = order_manager.buy_option(symbol, put_contract["ticker"], 1, put_signal)
                     if put_trade:
-                        telegram.send("PUT entered: " + symbol + " $" + str(put_contract["strike"]) + " x" + str(put_qty) + " @ $" + str(round(put_trade.entry_price, 2)) + "\nStop: -5% = $" + str(round(put_trade.stop_price, 2)))
+                        telegram.send("PUT entered: " + symbol + " $" + str(put_contract["strike"]) + " x1 @ $" + str(round(put_trade.entry_price, 2)) + "\nStop: -5% = $" + str(round(put_trade.stop_price, 2)))
             except Exception as e:
                 log.error("Open entry error for " + symbol + ": " + str(e))
                 telegram.send("Error entering " + symbol + ": " + str(e))
@@ -120,52 +114,36 @@ class TradingEngine:
             time.sleep(2)
 
     def _manage_open_positions(self):
+        try:
+            alpaca_positions = {p.symbol: p for p in order_manager.api.list_positions()}
+        except Exception as e:
+            log.error("Could not fetch Alpaca positions: " + str(e))
+            return
+
         for contract, trade in list(state.open_trades.items()):
             try:
-                # Get the actual option contract price, not the underlying stock price
-                current_price = self._get_option_price(contract, trade)
+                alpaca_symbol = contract.replace("O:", "")
+                pos = alpaca_positions.get(alpaca_symbol)
+                if pos is None:
+                    state.close_trade(contract, "already_closed", trade.entry_price)
+                    continue
+                current_price = float(pos.current_price or 0)
+                if current_price <= 0:
+                    continue
                 should_close, reason = trailing_stop_manager.update(trade, current_price)
                 if should_close:
                     exit_price = order_manager.close_position(contract, trade.qty)
-                    closed = state.close_trade(contract, reason, exit_price)
+                    closed = state.close_trade(contract, reason, exit_price or current_price)
                     if closed:
                         emoji = "✅" if closed.pnl > 0 else "❌"
-                        pnl_pct = round(((closed.pnl / (closed.entry_price * closed.qty * 100)) * 100), 1) if closed.entry_price > 0 else 0
-                        telegram.send(emoji + " *Closed* " + contract + "\n" + reason + " | P&L: $" + str(round(closed.pnl, 2)) + " (" + str(pnl_pct) + "%)\nDaily: $" + str(round(state.daily_pnl, 2)))
+                        pnl_pct = round(((current_price - trade.entry_price) / trade.entry_price) * 100, 1) if trade.entry_price > 0 else 0
+                        pnl_dollar = round(float(pos.unrealized_pl or 0), 2)
+                        telegram.send(emoji + " *Closed* " + alpaca_symbol + "\n" + reason + " | P&L: $" + str(pnl_dollar) + " (" + str(pnl_pct) + "%)\nDaily: $" + str(round(state.daily_pnl, 2)))
             except Exception as e:
                 log.error("Monitor error " + contract + ": " + str(e))
 
-
-    def _get_option_price(self, contract, trade):
-        """Fetch current option price from Alpaca positions."""
-        try:
-            position = order_manager.api.get_position(contract)
-            price = float(position.current_price or 0)
-            if price > 0:
-                return price
-        except Exception as e:
-            pass
-        # Fallback: Polygon snapshot
-        try:
-            import requests, config
-            polygon_ticker = "O:" + contract if not contract.startswith("O:") else contract
-            r = requests.get(
-                "https://api.polygon.io/v2/snapshot/locale/us/markets/options/tickers/" + polygon_ticker,
-                params={"apiKey": config.POLYGON_API_KEY},
-                timeout=5
-            )
-            data = r.json().get("results", {})
-            day = data.get("day", {})
-            price = day.get("close", 0) or day.get("last", 0)
-            if price > 0:
-                return price
-        except Exception as e:
-            log.error("Option price fetch error for " + contract + ": " + str(e))
-        return trade.current_price
-
     def set_symbols(self, symbols):
         self.active_symbols = symbols
-        log.info("Active symbols set to: " + str(symbols))
 
     def _close_all_eod(self):
         if state.open_trades:
