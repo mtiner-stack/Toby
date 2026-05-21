@@ -118,8 +118,8 @@ class TradingEngine:
     def _manage_open_positions(self):
         for contract, trade in list(state.open_trades.items()):
             try:
-                snap = market_data.get_snapshot(trade.symbol)
-                current_price = snap.get("price", trade.current_price) if snap else trade.current_price
+                # Get the actual option contract price, not the underlying stock price
+                current_price = self._get_option_price(contract, trade)
                 should_close, reason = trailing_stop_manager.update(trade, current_price)
                 if should_close:
                     exit_price = order_manager.close_position(contract, trade.qty)
@@ -130,6 +130,28 @@ class TradingEngine:
                         telegram.send(emoji + " *Closed* " + contract + "\n" + reason + " | P&L: $" + str(round(closed.pnl, 2)) + " (" + str(pnl_pct) + "%)\nDaily: $" + str(round(state.daily_pnl, 2)))
             except Exception as e:
                 log.error("Monitor error " + contract + ": " + str(e))
+
+
+    def _get_option_price(self, contract, trade):
+        """Fetch current mid price of the option contract from Polygon."""
+        try:
+            import requests, config
+            polygon_ticker = "O:" + contract if not contract.startswith("O:") else contract
+            r = requests.get(
+                "https://api.polygon.io/v3/quotes/" + polygon_ticker,
+                params={"limit": 1, "apiKey": config.POLYGON_API_KEY},
+                timeout=5
+            )
+            results = r.json().get("results", [])
+            if results:
+                q = results[-1]
+                bid = q.get("bid_price", 0)
+                ask = q.get("ask_price", 0)
+                if bid and ask:
+                    return (bid + ask) / 2
+        except Exception as e:
+            log.error("Option price fetch error for " + contract + ": " + str(e))
+        return trade.current_price
 
     def set_symbols(self, symbols):
         self.active_symbols = symbols
