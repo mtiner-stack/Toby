@@ -137,22 +137,28 @@ class TradingEngine:
 
 
     def _get_option_price(self, contract, trade):
-        """Fetch current mid price of the option contract from Polygon."""
+        """Fetch current option price from Alpaca positions."""
+        try:
+            position = order_manager.api.get_position(contract)
+            price = float(position.current_price or 0)
+            if price > 0:
+                return price
+        except Exception as e:
+            pass
+        # Fallback: Polygon snapshot
         try:
             import requests, config
             polygon_ticker = "O:" + contract if not contract.startswith("O:") else contract
             r = requests.get(
-                "https://api.polygon.io/v3/quotes/" + polygon_ticker,
-                params={"limit": 1, "apiKey": config.POLYGON_API_KEY},
+                "https://api.polygon.io/v2/snapshot/locale/us/markets/options/tickers/" + polygon_ticker,
+                params={"apiKey": config.POLYGON_API_KEY},
                 timeout=5
             )
-            results = r.json().get("results", [])
-            if results:
-                q = results[-1]
-                bid = q.get("bid_price", 0)
-                ask = q.get("ask_price", 0)
-                if bid and ask:
-                    return (bid + ask) / 2
+            data = r.json().get("results", {})
+            day = data.get("day", {})
+            price = day.get("close", 0) or day.get("last", 0)
+            if price > 0:
+                return price
         except Exception as e:
             log.error("Option price fetch error for " + contract + ": " + str(e))
         return trade.current_price
