@@ -115,6 +115,23 @@ class TelegramBot:
                 "/resume — resume trading\n"
                 "/kill — emergency stop all"
             )
+        elif text == '/tradenow':
+            from engine.trading_engine import engine
+            engine.entry_fired = False
+            engine._execute_open_entries()
+            reply = "Executing open entries now..."
+        elif text == '/spy':
+            from engine.trading_engine import engine
+            engine.set_symbols(['SPY'])
+            reply = "Now trading SPY only."
+        elif text == '/qqq':
+            from engine.trading_engine import engine
+            engine.set_symbols(['QQQ'])
+            reply = "Now trading QQQ only."
+        elif text == '/both':
+            from engine.trading_engine import engine
+            engine.set_symbols(['SPY', 'QQQ'])
+            reply = "Now trading both SPY and QQQ."
         else:
             reply = self._chat(raw_text)
 
