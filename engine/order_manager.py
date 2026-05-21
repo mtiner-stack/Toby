@@ -16,6 +16,14 @@ class OrderManager:
             config.ALPACA_BASE_URL
         )
 
+    def get_buying_power(self) -> float:
+        try:
+            account = self.api.get_account()
+            return float(account.buying_power)
+        except Exception as e:
+            log.error("Could not fetch buying power: " + str(e))
+            return 100000.0
+
     def buy_option(self, symbol: str, contract: str, qty: int, signal: dict) :
         """Submit a market buy for an options contract."""
         try:
