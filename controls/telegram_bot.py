@@ -93,15 +93,24 @@ class TelegramBot:
             from engine.order_manager import order_manager
             order_manager.close_all()
         elif text == "/positions":
-            d = state.to_dict()
-            if not d["open_trades"]:
-                reply = "No open positions."
-            else:
-                lines = ["📊 *Open Positions*"]
-                for t in d["open_trades"]:
-                    pnl_emoji = "🟢" if t["pnl"] >= 0 else "🔴"
-                    lines.append(f"{pnl_emoji} {t['symbol']} | {t['contract']}\nQty: {t['qty']} | Entry: ${t['entry']:.2f} | P&L: ${t['pnl']:.2f}")
-                reply = "\n".join(lines)
+            try:
+                from engine.order_manager import order_manager
+                positions = order_manager.api.list_positions()
+                if not positions:
+                    reply = "No open positions."
+                else:
+                    lines = ["📊 *Open Positions*"]
+                    total_pnl = 0
+                    for p in positions:
+                        pnl = float(p.unrealized_pl or 0)
+                        pnl_pct = float(p.unrealized_plpc or 0) * 100
+                        total_pnl += pnl
+                        emoji = "🟢" if pnl >= 0 else "🔴"
+                        lines.append(emoji + " " + p.symbol + "\nQty: " + str(p.qty) + " | Entry: $" + str(round(float(p.avg_entry_price),2)) + " | Now: $" + str(round(float(p.current_price or 0),2)) + " | P&L: $" + str(round(pnl,2)) + " (" + str(round(pnl_pct,1)) + "%)")
+                    lines.append("\nTotal P&L: $" + str(round(total_pnl,2)))
+                    reply = "\n".join(lines)
+            except Exception as e:
+                reply = "Error fetching positions: " + str(e)
         elif text == "/pnl":
             d = state.to_dict()
             reply = f"💰 Daily P&L: *${d['daily_pnl']:.2f}*\nTrades today: {d['daily_trades']}"
