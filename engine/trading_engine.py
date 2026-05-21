@@ -89,15 +89,19 @@ class TradingEngine:
                 price = snap["price"]
                 buying_power = order_manager.get_buying_power()
                 per_contract_budget = (buying_power * 0.15) / 2
-                call_signal = {"action": "buy_call", "confidence": 1.0, "suggested_strike": "1_OTM", "suggested_expiry": "0DTE", "reasoning": "Mechanical open entry - OTM call", "mid_price": call_contract["mid_price"] if call_contract else 1.0}
+                call_signal = {"action": "buy_call", "confidence": 1.0, "suggested_strike": "1_OTM", "suggested_expiry": "0DTE", "reasoning": "Mechanical open entry - OTM call"}
                 call_contract = options_scanner.find_contract(symbol, call_signal, price)
+                if call_contract:
+                    call_signal["mid_price"] = call_contract["mid_price"]
                 if call_contract:
                     call_qty = max(1, int(per_contract_budget / (call_contract["mid_price"] * 100)))
                     call_trade = order_manager.buy_option(symbol, call_contract["ticker"], call_qty, call_signal)
                     if call_trade:
                         telegram.send("CALL entered: " + symbol + " $" + str(call_contract["strike"]) + " x" + str(call_qty) + " @ $" + str(round(call_trade.entry_price, 2)) + "\nStop: -5% = $" + str(round(call_trade.stop_price, 2)))
-                put_signal = {"action": "buy_put", "confidence": 1.0, "suggested_strike": "1_OTM", "suggested_expiry": "0DTE", "reasoning": "Mechanical open entry - OTM put", "mid_price": put_contract["mid_price"] if put_contract else 1.0}
+                put_signal = {"action": "buy_put", "confidence": 1.0, "suggested_strike": "1_OTM", "suggested_expiry": "0DTE", "reasoning": "Mechanical open entry - OTM put"}
                 put_contract = options_scanner.find_contract(symbol, put_signal, price)
+                if put_contract:
+                    put_signal["mid_price"] = put_contract["mid_price"]
                 if put_contract:
                     put_qty = max(1, int(per_contract_budget / (put_contract["mid_price"] * 100)))
                     put_trade = order_manager.buy_option(symbol, put_contract["ticker"], put_qty, put_signal)
