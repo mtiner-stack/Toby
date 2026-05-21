@@ -1,7 +1,10 @@
 """
-Trading Engine - High-speed scalping architecture.
+Trading Engine - Mechanical scalping at 9:31am ET.
+Buys 1 OTM call + 1 OTM put simultaneously at open.
+Pure rules-based - no AI autonomy at execution time.
 """
-import time, threading
+import time
+import threading
 from datetime import datetime
 import pytz
 from utils.logger import get_logger
@@ -21,14 +24,12 @@ DAILY_GOAL = 10000
 
 class TradingEngine:
     def __init__(self):
-        self.bias = {}
-        self.bias_set = False
-        self.last_prices = {}
-        self.last_scan = {}
+        self.entry_fired = False
+        self.active_symbols = list(config.SYMBOLS)
 
     def run(self):
         state.running = True
-        telegram.send("*Toby is online.* High-speed scalping mode active.")
+        telegram.send("*Toby is online.* Mechanical scalping mode. Will enter at 9:31 ET.")
         threading.Thread(target=self._position_monitor_loop, daemon=True).start()
         try:
             while state.running:
@@ -44,138 +45,67 @@ class TradingEngine:
             return
         now_et = datetime.now(ET)
         hour, minute = now_et.hour, now_et.minute
-        if hour == 9 and minute == 29 and not self.bias_set:
-            self._set_opening_bias()
+        if hour == 0 and minute == 0:
+            self.entry_fired = False
+            state.goal_hit = False
+            state.conservative_mode = False
         if hour < 9 or (hour == 9 and minute < 30):
             log.info("Market not open yet " + now_et.strftime("%H:%M ET"))
-            time.sleep(10)
+            time.sleep(15)
             return
         if (hour == 15 and minute >= 45) or hour >= 16:
             self._close_all_eod()
             time.sleep(60)
             return
-        if state.goal_hit:
+        if state.goal_hit or state.kill_switch:
             time.sleep(2)
-            return
-        if state.daily_pnl >= DAILY_GOAL:
-            state.goal_hit = True
-            telegram.send("*Daily goal hit!* P&L: $" + str(round(state.daily_pnl, 2)) + "\nTrailing winners. No new positions.")
             return
         if state.daily_pnl <= -config.MAX_DAILY_LOSS:
             if not state.paused:
                 state.paused = True
-                telegram.send("Daily loss limit hit. Shutting down for today.")
+                telegram.send("Daily loss limit hit $" + str(round(state.daily_pnl, 2)) + ". Closing all and stopping.")
+                order_manager.close_all()
             time.sleep(5)
             return
-        is_power_hour = (hour == 9 and minute >= 30)
-        if hour >= 10 and not state.conservative_mode:
-            state.conservative_mode = True
-            telegram.send("10am - P&L: $" + str(round(state.daily_pnl, 2)) + ". Switching to conservative mode.")
-        if len(state.open_trades) < config.MAX_OPEN_TRADES:
-            for symbol in config.SYMBOLS:
-                if state.kill_switch or len(state.open_trades) >= config.MAX_OPEN_TRADES:
-                    break
-                self._evaluate_symbol(symbol, is_power_hour)
-        time.sleep(5 if is_power_hour else 30)
+        if state.daily_pnl >= DAILY_GOAL:
+            state.goal_hit = True
+            telegram.send("*Daily goal hit!* $" + str(round(state.daily_pnl, 2)) + "\nTrailing all winners. No new entries.")
+            time.sleep(2)
+            return
+        if hour == 9 and minute >= 31 and not self.entry_fired:
+            self._execute_open_entries()
+        time.sleep(5)
 
-    def _set_opening_bias(self):
-        log.info("Setting opening bias...")
-        telegram.send("Pre-market analysis running...")
-        self.bias_set = True
-        for symbol in config.SYMBOLS:
+    def _execute_open_entries(self):
+        self.entry_fired = True
+        log.info("Executing mechanical open entries...")
+        telegram.send("*9:31 ET - Executing open entries*\nBuying OTM call + put for: " + ", ".join(self.active_symbols))
+        for symbol in self.active_symbols:
             try:
                 snap = market_data.get_snapshot(symbol)
-                tech = market_data.get_technicals(symbol)
-                vix = market_data.get_vix()
-                snapshot = {**snap, **tech, "vix": vix, "open_positions": 0, "daily_pnl": 0, "pre_market": True, "conservative_mode": False, "goal_hit": False}
-                signal = ai_brain.analyze(snapshot)
-                self.bias[symbol] = "call" if signal["action"] == "buy_call" else ("put" if signal["action"] == "buy_put" else None)
+                if not snap or not snap.get("price"):
+                    log.error("No price data for " + symbol)
+                    continue
+                price = snap["price"]
+                buying_power = order_manager.get_buying_power()
+                per_contract_budget = (buying_power * 0.15) / 2
+                call_signal = {"action": "buy_call", "confidence": 1.0, "suggested_strike": "1_OTM", "suggested_expiry": "0DTE", "reasoning": "Mechanical open entry - OTM call"}
+                call_contract = options_scanner.find_contract(symbol, call_signal, price)
+                if call_contract:
+                    call_qty = max(1, int(per_contract_budget / (call_contract["mid_price"] * 100)))
+                    call_trade = order_manager.buy_option(symbol, call_contract["ticker"], call_qty, call_signal)
+                    if call_trade:
+                        telegram.send("CALL entered: " + symbol + " $" + str(call_contract["strike"]) + " x" + str(call_qty) + " @ $" + str(round(call_trade.entry_price, 2)) + "\nStop: -5% = $" + str(round(call_trade.stop_price, 2)))
+                put_signal = {"action": "buy_put", "confidence": 1.0, "suggested_strike": "1_OTM", "suggested_expiry": "0DTE", "reasoning": "Mechanical open entry - OTM put"}
+                put_contract = options_scanner.find_contract(symbol, put_signal, price)
+                if put_contract:
+                    put_qty = max(1, int(per_contract_budget / (put_contract["mid_price"] * 100)))
+                    put_trade = order_manager.buy_option(symbol, put_contract["ticker"], put_qty, put_signal)
+                    if put_trade:
+                        telegram.send("PUT entered: " + symbol + " $" + str(put_contract["strike"]) + " x" + str(put_qty) + " @ $" + str(round(put_trade.entry_price, 2)) + "\nStop: -5% = $" + str(round(put_trade.stop_price, 2)))
             except Exception as e:
-                log.error("Bias error " + symbol + ": " + str(e))
-                self.bias[symbol] = None
-        parts = [s + ": " + (b or "neutral") for s, b in self.bias.items()]
-        telegram.send("*Opening Bias*\n" + " | ".join(parts) + "\nReady to trade at 9:30!")
-
-    def _evaluate_symbol(self, symbol, is_power_hour):
-        try:
-            last = self.last_scan.get(symbol, 0)
-            if time.time() - last < (5 if is_power_hour else 30):
-                return
-            self.last_scan[symbol] = time.time()
-            snap = market_data.get_snapshot(symbol)
-            if not snap or not snap.get("price"):
-                return
-            price = snap["price"]
-            prev_price = self.last_prices.get(symbol, price)
-            self.last_prices[symbol] = price
-            vix = market_data.get_vix()
-            tech = market_data.get_technicals(symbol)
-            signal = self._compute_signal(symbol, snap, tech, vix, is_power_hour, prev_price)
-            if signal["action"] == "no_trade":
-                log.info(symbol + ": " + signal["reasoning"])
-                return
-            state.last_ai_analysis = signal["reasoning"]
-            state.market_regime = signal["market_regime"]
-            contract_info = options_scanner.find_contract(symbol, signal, price)
-            if not contract_info:
-                return
-            buying_power = order_manager.get_buying_power()
-            qty = options_scanner.calc_qty(contract_info["mid_price"], buying_power, len(state.open_trades), is_power_hour)
-            cost = contract_info["mid_price"] * 100 * qty
-            allowed, risk_reason = risk_engine.check_trade_allowed(symbol, cost, signal)
-            if not allowed:
-                log.info(symbol + ": blocked - " + risk_reason)
-                return
-            trade = order_manager.buy_option(symbol, contract_info["ticker"], qty, signal)
-            if trade:
-                telegram.send("*Trade Fired* " + symbol + " " + contract_info["type"].upper() + "\nStrike: $" + str(contract_info["strike"]) + " | Qty: " + str(qty) + " | Entry: $" + str(round(trade.entry_price, 2)) + "\nStop: $" + str(round(trade.stop_price, 2)) + " | TP: $" + str(round(trade.take_profit, 2)) + "\n_" + signal["reasoning"] + "_")
-        except Exception as e:
-            log.error("Error evaluating " + symbol + ": " + str(e))
-
-    def _compute_signal(self, symbol, snap, tech, vix, is_power_hour, prev_price):
-        price = snap["price"]
-        day_change_pct = snap.get("day_change_pct", 0)
-        rsi = tech.get("rsi", 50)
-        macd = tech.get("macd", 0)
-        macd_sig = tech.get("macd_signal", 0)
-        vol_ratio = tech.get("volume_ratio", 1.0)
-        vwap = snap.get("vwap", price)
-        bias = self.bias.get(symbol)
-        momentum = price - prev_price
-        cs, ps = 0, 0
-        if day_change_pct > 0.3: cs += 2
-        elif day_change_pct < -0.3: ps += 2
-        if price > vwap: cs += 1
-        else: ps += 1
-        if macd > macd_sig: cs += 1
-        else: ps += 1
-        if rsi > 55: cs += 1
-        elif rsi < 45: ps += 1
-        if vol_ratio > 1.5:
-            if cs >= ps: cs += 2
-            else: ps += 2
-        if momentum > 0.05: cs += 2
-        elif momentum < -0.05: ps += 2
-        if bias == "call": cs += 2
-        elif bias == "put": ps += 2
-        total = cs + ps
-        if total == 0:
-            return {"action": "no_trade", "confidence": 0, "reasoning": "No signals", "market_regime": "unknown"}
-        if cs > ps:
-            action, conf = "buy_call", cs / (total + 2)
-        elif ps > cs:
-            action, conf = "buy_put", ps / (total + 2)
-        else:
-            return {"action": "no_trade", "confidence": 0, "reasoning": "Tied signals", "market_regime": "ranging"}
-        min_conf = 0.55 if is_power_hour else 0.70
-        if state.conservative_mode: min_conf = 0.75
-        if conf < min_conf:
-            return {"action": "no_trade", "confidence": conf, "reasoning": "Conf " + str(round(conf*100)) + "% below threshold | " + str(cs) + "c/" + str(ps) + "p", "market_regime": "ranging"}
-        regime = "volatile" if vix > 25 else ("trending_up" if cs > ps else "trending_down")
-        return {"action": action, "symbol": symbol, "confidence": round(conf, 2),
-                "reasoning": str(cs) + "c/" + str(ps) + "p | RSI:" + str(rsi) + " | Vol:" + str(round(vol_ratio,1)) + "x | Gap:" + str(round(day_change_pct,2)) + "% | Mom:" + str(round(momentum,3)),
-                "market_regime": regime, "urgency": "high" if is_power_hour else "medium",
-                "suggested_strike": "ATM" if is_power_hour else "1_OTM", "suggested_expiry": "0DTE"}
+                log.error("Open entry error for " + symbol + ": " + str(e))
+                telegram.send("Error entering " + symbol + ": " + str(e))
 
     def _position_monitor_loop(self):
         while state.running:
@@ -196,18 +126,22 @@ class TradingEngine:
                     closed = state.close_trade(contract, reason, exit_price)
                     if closed:
                         emoji = "✅" if closed.pnl > 0 else "❌"
-                        telegram.send(emoji + " *Closed* " + contract + "\n" + reason + " | P&L: $" + str(round(closed.pnl, 2)) + " | Daily: $" + str(round(state.daily_pnl, 2)))
+                        pnl_pct = round(((closed.pnl / (closed.entry_price * closed.qty * 100)) * 100), 1) if closed.entry_price > 0 else 0
+                        telegram.send(emoji + " *Closed* " + contract + "\n" + reason + " | P&L: $" + str(round(closed.pnl, 2)) + " (" + str(pnl_pct) + "%)\nDaily: $" + str(round(state.daily_pnl, 2)))
             except Exception as e:
                 log.error("Monitor error " + contract + ": " + str(e))
+
+    def set_symbols(self, symbols):
+        self.active_symbols = symbols
+        log.info("Active symbols set to: " + str(symbols))
 
     def _close_all_eod(self):
         if state.open_trades:
             order_manager.close_all()
             for contract in list(state.open_trades.keys()):
                 state.close_trade(contract, "eod_close", 0)
-            telegram.send("Market closed. Daily P&L: $" + str(round(state.daily_pnl, 2)))
-        self.bias_set = False
-        self.bias = {}
+            telegram.send("Market closed. All positions closed.\nDaily P&L: $" + str(round(state.daily_pnl, 2)))
+        self.entry_fired = False
         state.goal_hit = False
         state.conservative_mode = False
 
