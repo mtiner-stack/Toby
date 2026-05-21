@@ -24,10 +24,13 @@ class OptionsScanner:
         today = datetime.now().strftime("%Y-%m-%d")
 
         try:
+            # Filter strikes within $10 of current price to get ATM/near-OTM only
             params = {
                 "underlying_ticker": symbol,
                 "contract_type": option_type,
                 "expiration_date": today,
+                "strike_price.gte": current_price - 5,
+                "strike_price.lte": current_price + 15,
                 "limit": 20,
                 "sort": "strike_price",
                 "order": "asc",
